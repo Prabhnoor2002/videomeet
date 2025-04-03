@@ -1,0 +1,792 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Meeting Room</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free/js/all.min.js"></script>
+    <style>
+        body {
+            background-color: #e5e7eb;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            font-family: 'Poppins', sans-serif;
+        }
+        
+        .container {
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            width: 90%;
+            max-width: 1200px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+        .video-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 15px;
+        width: 100%;
+        margin-top: 20px;
+        padding: 10px;
+    }
+
+        video {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+        .video-container {
+        position: relative;
+        background-color: #000;
+        border-radius: 10px;
+        overflow: hidden;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        aspect-ratio: 16 / 9; /* Maintain a 16:9 aspect ratio */
+    }
+    .name-overlay {
+        position: absolute;
+        bottom: 8px;
+        left: 8px;
+        background-color: rgba(0, 0, 0, 0.7);
+        color: #fff;
+        padding: 4px 8px;
+        border-radius: 8px;
+        font-size: 14px;
+    }
+    .placeholder {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        width: 100%;
+        height: 100%;
+        background-color: #4b5563; /* Gray background */
+        color: #fff;
+        font-size: 24px;
+        font-weight: bold;
+        border-radius: 10px;
+    }
+
+
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-top: 15px;
+        }
+        .control-btn {
+            background-color: #1d4ed8;
+            color: white;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .control-btn:hover {
+            background-color: #2563eb;
+        }
+       
+    .control-btn:disabled {
+        background-color: #9ca3af; 
+        color: #ffffff; 
+        cursor: not-allowed;
+    }
+    #chatMessages {
+    padding-bottom: 10px;
+  }
+  #chatMessages div {
+    animation: fadeIn 0.3s ease forwards;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2 class="text-2xl font-semibold mb-4">Meeting Room</h2>
+        <div class="video-grid" id="videoGrid">
+            <div class="video-container">
+                <video id="localVideo" autoplay playsinline></video>
+                <div id="localName" class="name-overlay"></div>
+            </div>
+        </div>
+        
+        <div class="controls">
+    <button id="startCall" class="control-btn"><i class="fas fa-phone"></i></button>
+    <button id="endCall" class="control-btn" style="background-color: #dc2626; color: #ffffff;" disabled>
+        <i class="fas fa-phone-slash"></i>
+    </button>
+    <button id="toggleCamera" class="control-btn" disabled><i class="fas fa-video"></i></button>
+    <button id="toggleMic" class="control-btn" disabled><i class="fas fa-microphone"></i></button>
+    <button id="shareScreen" class="control-btn bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded" disabled>
+        <i class="fas fa-desktop"></i> 
+
+    </button>
+    <button id="startRecording" class="control-btn bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-2 px-4 rounded">
+        <i class="fas fa-circle"></i> 
+    </button>
+    <button id="stopRecording" class="control-btn bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded" disabled>
+        <i class="fas fa-stop-circle"></i> 
+    </button>
+    
+    
+</div>
+    </div>
+    <div id="participantsSidebar" class="fixed left-0 top-0 h-full w-64 bg-white shadow-lg overflow-y-auto hidden">
+        <div class="p-4 bg-blue-600 text-white">
+            <h3 class="text-lg font-semibold">Participants</h3>
+            <button id="closeSidebar" class="text-white"><i class="fas fa-times"></i></button>
+        </div>
+        <ul id="participantsList" class="p-4"></ul>
+    </div>
+    <button id="openSidebar" class="fixed left-8 bottom-8 bg-blue-600 text-white p-4 rounded-full shadow-lg cursor-pointer transition-all hover:bg-blue-700">
+        <i class="fas fa-users text-xl"></i>
+    </button>
+    <div id="chatToggle" class="fixed right-8 bottom-8 bg-blue-600 text-white p-4 rounded-full shadow-lg cursor-pointer transition-all hover:bg-blue-700">
+        <i class="fas fa-comments text-xl"></i>
+      </div>
+      
+      <div id="chatBox" class="fixed right-8 bottom-8 w-80 bg-white border border-gray-300 rounded-xl shadow-lg overflow-hidden hidden transition-all">
+        <div class="flex justify-between items-center bg-blue-600 text-white p-3">
+          <span>Meeting Chat</span>
+          <button id="closeChat" class="text-white"><i class="fas fa-times"></i></button>
+        </div>
+        <div id="chatMessages" class="h-64 overflow-y-auto p-3 bg-gray-50"></div>
+        <div class="flex p-3 bg-gray-100">
+          <input id="chatInput" type="text" placeholder="Type a message..."
+            class="flex-1 p-2 rounded-md border border-gray-300 focus:outline-none focus:ring focus:ring-blue-300">
+          <button id="sendBtn" class="ml-2 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700">Send</button>
+        </div>
+      </div>
+      
+    
+    <script src="https://cdn.socket.io/4.0.1/socket.io.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/agora-rtc-sdk-ng@4.11.0"></script>
+
+    <script>
+        let client = null;
+        let localAudioTrack = null;
+        let localVideoTrack = null;
+        let isCameraOn = true;
+        let isMicOn = true;
+        let mediaRecorder;
+        let recordedChunks = [];
+        let canvas = document.createElement('canvas');
+let ctx = canvas.getContext('2d');
+
+        
+
+        const socket = io('http://localhost:5000'); // Your Flask server with Socket.io
+
+    const chatMessages = document.getElementById('chatMessages');
+    const chatInput = document.getElementById('chatInput');
+    const sendBtn = document.getElementById('sendBtn');
+    const chatBox = document.getElementById('chatBox');
+    const closeChat = document.getElementById('closeChat');
+    const chatToggle = document.getElementById('chatToggle');
+    const participantsList = document.getElementById('participantsList');
+const openSidebar = document.getElementById('openSidebar');
+const closeSidebar = document.getElementById('closeSidebar');
+const participantsSidebar = document.getElementById('participantsSidebar');
+const username = "{{ username | escape }}"; // Injected from Flask backend
+const meeting_id = "{{ meeting_id | escape }}"; // Injected from Flask backend
+document.getElementById('localName').innerText = username;
+const room = meeting_id; // Assuming meeting_id is available in the scope
+
+socket.emit('join', { room: room, username: username, role: 'user' });
+
+socket.on('participant_joined', (data) => {
+    updateParticipantsList(data.participants);
+    appendChatMessage(`${data.username} joined the meeting`, 'center');
+
+    // Update the name overlay for the local video
+    if (data.username === username) {
+        document.getElementById('localName').innerText = data.username;
+    }
+});
+socket.on('participant_left', (data) => {
+    updateParticipantsList(data.participants);
+    appendChatMessage(`${data.username} left the meeting`, 'center');
+});
+
+function updateParticipantsList(participants) {
+    participantsList.innerHTML = '';
+    participants.forEach(participant => {
+        const participantItem = document.createElement('li');
+        participantItem.className = 'p-2 border-b border-gray-300 flex items-center justify-between';
+
+        let nameSpan = document.createElement('span');
+        nameSpan.textContent = participant.username;
+
+        if (participant.role === 'admin') {
+            let badge = document.createElement('span');
+            badge.textContent = 'Admin';
+            badge.className = 'ml-2 bg-red-500 text-white text-xs px-2 py-1 rounded-full';
+            participantItem.appendChild(nameSpan);
+            participantItem.appendChild(badge);
+        } else {
+            participantItem.appendChild(nameSpan);
+        }
+
+        participantsList.appendChild(participantItem);
+    });
+}
+
+// Emit leave event when the user leaves the page
+window.addEventListener('beforeunload', () => {
+    socket.emit('leave', { room: room, username: username, uid: uid });
+});
+
+
+openSidebar.addEventListener('click', () => {
+    participantsSidebar.classList.remove('hidden');
+});
+
+closeSidebar.addEventListener('click', () => {
+    participantsSidebar.classList.add('hidden');
+});
+
+// function addParticipant(name) {
+//     const participantItem = document.createElement('li');
+//     participantItem.className = 'p-2 border-b border-gray-300';
+//     participantItem.textContent = name;
+//     participantsList.appendChild(participantItem);
+// }
+
+function removeParticipant(name) {
+    const participantItems = participantsList.getElementsByTagName('li');
+    for (let item of participantItems) {
+        if (item.textContent === name) {
+            item.remove();
+            break;
+        }
+    }
+}
+document.getElementById('startRecording').addEventListener('click', startScreenRecording);
+document.getElementById('stopRecording').addEventListener('click', stopScreenRecording);
+
+async function startScreenRecording() {
+  try {
+    // Capture the entire screen
+    const screenStream = await navigator.mediaDevices.getDisplayMedia({
+      video: {
+        displaySurface: "browser"
+      },
+      audio: true
+    });
+
+    // Set canvas size to match the screen
+    const screenVideo = document.createElement('video');
+    screenVideo.srcObject = screenStream;
+    await screenVideo.play();
+    canvas.width = screenVideo.videoWidth || window.innerWidth;
+    canvas.height = screenVideo.videoHeight || window.innerHeight;
+
+    console.log('Canvas initialized:', canvas.width, canvas.height);
+
+    // Draw only the screen content on the canvas
+    function drawFrame() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.drawImage(screenVideo, 0, 0, canvas.width, canvas.height);
+      requestAnimationFrame(drawFrame);
+    }
+    drawFrame();
+
+    // Record the canvas output
+    const outputStream = canvas.captureStream(30);
+    mediaRecorder = new MediaRecorder(outputStream, { mimeType: 'video/webm' });
+
+    mediaRecorder.ondataavailable = (e) => {
+      if (e.data.size > 0) {
+        recordedChunks.push(e.data);
+      }
+    };
+
+    mediaRecorder.onstop = saveRecording;
+    mediaRecorder.start();
+
+    // UI Updates
+    document.getElementById('startRecording').disabled = true;
+    document.getElementById('stopRecording').disabled = false;
+
+    console.log("Recording started...");
+  } catch (error) {
+    console.error("Error starting screen recording:", error);
+    alert("Failed to start recording. Please check permissions.");
+  }
+}
+
+function stopScreenRecording() {
+  if (mediaRecorder) {
+    mediaRecorder.stop();
+    console.log("Recording stopped.");
+
+    // UI Updates
+    document.getElementById('startRecording').disabled = false;
+    document.getElementById('stopRecording').disabled = true;
+  }
+}
+
+function saveRecording() {
+  const blob = new Blob(recordedChunks, { type: 'video/webm' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `meeting-recording-${Date.now()}.webm`;
+  a.click();
+
+  console.log("Recording saved successfully.");
+}
+
+// Modify the setupRemoteUserListeners function to include participant management
+function setupRemoteUserListeners() {
+    client.on("user-published", async (user, mediaType) => {
+        await client.subscribe(user, mediaType);
+        if (mediaType === "video") {
+            displayRemoteVideo(user);
+        }
+        if (mediaType === "audio") {
+            user.audioTrack.play();
+        }
+        addParticipant({ username: `User ${user.uid}`, role: 'user' }); // Add participant to the list
+    });
+
+    client.on("user-unpublished", (user) => {
+        console.log(`Remote user ${user.uid} left`);
+        removeRemoteVideo(user.uid);
+        removeParticipant(`User ${user.uid}`); // Remove participant from the list
+    });
+
+    client.on("user-left", (user) => {
+        console.log(`Remote user ${user.uid} left`);
+        removeRemoteVideo(user.uid);
+        removeParticipant(`User ${user.uid}`); // Remove participant from the list
+    });
+}
+
+
+
+  // Sending message with username (optional if you have usernames)
+  sendBtn.addEventListener('click', () => {
+  const message = chatInput.value.trim();
+  if (message) {
+    socket.emit('chat_message', { msg: message, sender: username, room: room }); // Include room
+    appendChatMessage(`You: ${message}`, 'right');
+    chatInput.value = '';
+  }
+});
+
+
+// Receive and display messages
+socket.on('chat_message', (data) => {
+  if (data.sender !== username) {
+    appendChatMessage(`${data.sender}: ${data.msg}`, 'left');
+  } else {
+    appendChatMessage(`You: ${data.msg}`, 'right');
+  }
+});
+
+
+// Toggle chat box visibility
+chatToggle.addEventListener('click', () => {
+  chatToggle.classList.add('hidden');
+  chatBox.classList.remove('hidden');
+});
+
+closeChat.addEventListener('click', () => {
+  chatBox.classList.add('hidden');
+  chatToggle.classList.remove('hidden');
+});
+
+// Append messages to chat window
+function appendChatMessage(message, side) {
+  const msgWrapper = document.createElement('div');
+  msgWrapper.className = `w-full flex ${side === 'right' ? 'justify-end' : 'justify-start'} mb-2`;
+
+  const msgElement = document.createElement('div');
+  msgElement.className = `p-3 rounded-2xl max-w-[70%] text-sm shadow ${
+    side === 'right' ? 'bg-blue-500 text-white' : 'bg-gray-300 text-gray-900'
+  }`;
+
+  msgElement.textContent = message;
+  msgWrapper.appendChild(msgElement);
+  chatMessages.appendChild(msgWrapper);
+  chatMessages.scrollTo({ top: chatMessages.scrollHeight, behavior: 'smooth' });
+}
+        const appId = "bca6ee4b69a94a33af8b1ff43852fa56";
+        const token = "007eJxTYIh/WX3vR9afEBffI/p+X9h/pos/3LtPQtbqvXwwG9tU90AFhqTkRLPUVJMkM8tES5NEY+PENIskw7Q0E2MLU6O0RFMzB8l36Q2BjAwl1+SYGBkgEMRnZShJLS4xZGAAAHSjH0k=";
+        const channel = "test1";
+        const uid = Math.floor(Math.random() * 10000);
+        let screenTrack = null;
+document.getElementById("shareScreen").addEventListener("click", async () => {
+    if (!screenTrack) {
+        try {
+            // Start screen sharing
+            screenTrack = await AgoraRTC.createScreenVideoTrack();
+
+            // Replace the local video track with the screen track
+            await client.unpublish(localVideoTrack);
+            await client.publish(screenTrack);
+
+            // Update the UI to show "Stop Sharing"
+            document.getElementById("shareScreen").innerHTML = '<i class="fas fa-stop"></i>';
+            console.log("Screen sharing started.");
+        } catch (error) {
+            console.error("Error starting screen sharing:", error);
+        }
+    } else {
+        try {
+            // Stop screen sharing
+            await client.unpublish(screenTrack);
+            screenTrack.close();
+            screenTrack = null;
+
+            // Re-publish the local video track
+            await client.publish(localVideoTrack);
+
+            // Update the UI to show "Share Screen"
+            document.getElementById("shareScreen").innerHTML = '<i class="fas fa-desktop"></i> Share Screen';
+            console.log("Screen sharing stopped.");
+        } catch (error) {
+            console.error("Error stopping screen sharing:", error);
+        }
+    }
+});       
+
+document.getElementById("startCall").addEventListener("click", async () => {
+    try {
+        // Initialize Agora client
+        client = AgoraRTC.createClient({ mode: "rtc", codec: "vp8" });
+        await client.join(appId, channel, token || null);
+
+        // Create and publish local tracks
+        localVideoTrack = await AgoraRTC.createCameraVideoTrack();
+        localAudioTrack = await AgoraRTC.createMicrophoneAudioTrack();
+
+        displayLocalVideo(localVideoTrack);
+        await client.publish([localVideoTrack, localAudioTrack]);
+
+        console.log("Call started successfully!");
+        setupRemoteUserListeners();
+
+        // Disable the "Start Call" button
+        document.getElementById("startCall").disabled = true;
+
+        // Enable all other buttons
+        document.getElementById("endCall").disabled = false;
+        document.getElementById("toggleCamera").disabled = false;
+        document.getElementById("toggleMic").disabled = false;
+        document.getElementById("shareScreen").disabled = false;
+    } catch (error) {
+        console.error("Error starting call:", error);
+    }
+});
+document.getElementById("endCall").addEventListener("click", async () => {
+    try {
+        // Stop and close the tracks
+        if (localAudioTrack) {
+            localAudioTrack.stop();
+            localAudioTrack.close();
+            localAudioTrack = null;
+        }
+        if (localVideoTrack) {
+            localVideoTrack.stop();
+            localVideoTrack.close();
+            localVideoTrack = null;
+        }
+        
+        // Leave the Agora channel
+        if (client) {
+            await client.leave();
+            client = null;
+            document.getElementById("videoGrid").innerHTML = '<video id="localVideo" autoplay playsinline></video>';
+            console.log("Left channel and cleared video.");
+        }
+
+        // Update UI
+        document.getElementById("startCall").disabled = false;
+        document.getElementById("endCall").disabled = true;
+        document.getElementById("toggleCamera").disabled = true;
+        document.getElementById("toggleMic").disabled = true;
+        document.getElementById("shareScreen").disabled = true;
+
+        const endCallButton = document.getElementById("endCall");
+        endCallButton.style.backgroundColor = "#9ca3af"; 
+        endCallButton.style.color = "#ffffff";
+    } catch (error) {
+        console.error("Error ending call:", error);
+    }
+});
+
+
+document.getElementById("toggleCamera").addEventListener("click", async () => {
+    try {
+        if (!localVideoTrack) {
+            // Recreate the video track if it doesn't exist
+            localVideoTrack = await AgoraRTC.createCameraVideoTrack();
+            console.log("New video track created.");
+        }
+
+        const isEnabled = localVideoTrack.enabled;
+
+        if (isEnabled) {
+    // Disable the camera without unpublishing
+    await localVideoTrack.setEnabled(false);
+    document.getElementById("localVideo").style.display = "none";
+    document.getElementById("placeholder").style.display = "flex";
+    console.log("Camera turned off. Placeholder shown.");
+} else {
+    // Enable the camera
+    await localVideoTrack.setEnabled(true);
+    document.getElementById("localVideo").style.display = "block";
+    document.getElementById("placeholder").style.display = "none";
+    console.log("Camera turned on. Video shown.");
+}
+        // Update the button icon
+        document.getElementById("toggleCamera").innerHTML = isEnabled
+            ? '<i class="fas fa-video-slash"></i>'
+            : '<i class="fas fa-video"></i>';
+    } catch (error) {
+        console.error("Error toggling camera:", error);
+    }
+});
+
+
+
+document.getElementById("toggleMic").addEventListener("click", async () => {
+    try {
+        if (localAudioTrack) {
+            const isEnabled = localAudioTrack.enabled;
+            await localAudioTrack.setEnabled(!isEnabled);
+            document.getElementById("toggleMic").innerHTML = isEnabled
+                ? '<i class="fas fa-microphone-slash"></i>'
+                : '<i class="fas fa-microphone"></i>';
+            console.log(isEnabled ? "Microphone muted." : "Microphone unmuted.");
+        } else {
+            console.warn("No audio track available.");
+        }
+    } catch (error) {
+        console.error("Error toggling mic:", error);
+    }
+});
+
+        function displayLocalVideo(track) {
+            const videoElement = document.getElementById("localVideo");
+            videoElement.srcObject = new MediaStream([track.getMediaStreamTrack()]);
+            console.log("Local video started.");
+        }
+
+        function setupRemoteUserListeners() {
+    client.on("user-published", async (user, mediaType) => {
+        try {
+            await client.subscribe(user, mediaType);
+
+            if (mediaType === "video" && user.videoTrack) {
+                displayRemoteVideo(user);
+            }
+            
+            if (mediaType === "audio" && user.audioTrack) {
+                user.audioTrack.play();
+            }
+        } catch (error) {
+            console.error("Error subscribing to user:", error);
+        }
+    });
+
+    client.on("user-unpublished", (user) => {
+        console.log(`Remote user ${user.uid} left`);
+        removeRemoteVideo(user.uid);
+    });
+}
+
+function displayRemoteVideo(user) {
+    const videoGrid = document.getElementById("videoGrid");
+    let container = document.getElementById(`user-container-${user.uid}`);
+
+    if (!container) {
+        container = document.createElement("div");
+        container.id = `user-container-${user.uid}`;
+        container.className = "video-container ";
+        videoGrid.appendChild(container);
+    }
+
+    // Video Element
+    let videoElement = document.getElementById(`remoteVideo-${user.uid}`);
+    if (!videoElement) {
+        videoElement = document.createElement("video");
+        videoElement.id = `remoteVideo-${user.uid}`;
+        videoElement.autoplay = true;
+        videoElement.playsinline = true;
+        // videoElement.className = "w-full h-full";
+        container.appendChild(videoElement);
+    }
+
+    // Placeholder for when Camera is Off
+    let placeholder = document.getElementById(`placeholder-${user.uid}`);
+    if (!placeholder) {
+        placeholder = document.createElement("div");
+        placeholder.id = `placeholder-${user.uid}`;
+        placeholder.className = "placeholder";
+        placeholder.textContent = getInitials(user.username || `User ${user.uid}`);
+        container.appendChild(placeholder);
+    }
+
+    // Name Overlay
+    let nameOverlay = document.getElementById(`name-overlay-${user.uid}`);
+    if (!nameOverlay) {
+        nameOverlay = document.createElement("div");
+        nameOverlay.id = `name-overlay-${user.uid}`;
+        nameOverlay.className = "name-overlay";
+        nameOverlay.textContent = user.username || `User ${user.uid}`;
+        container.appendChild(nameOverlay);
+    }
+
+    // Show Video or Placeholder
+    if (user.videoTrack) {
+        videoElement.srcObject = new MediaStream([user.videoTrack.getMediaStreamTrack()]);
+        videoElement.style.display = "block";
+        placeholder.style.display = "none";
+    } else {
+        videoElement.style.display = "none";
+        placeholder.style.display = "flex";
+    }
+}
+
+// Event for Camera Off
+client.on("user-unpublished", (user) => {
+    console.log(`Remote user ${user.uid} turned off their camera`);
+    const videoElement = document.getElementById(`remoteVideo-${user.uid}`);
+    const placeholder = document.getElementById(`placeholder-${user.uid}`);
+    
+    if (videoElement) {
+        videoElement.style.display = "none";
+        placeholder.style.display = "flex";
+    }
+});
+
+// Event for Camera On
+client.on("user-published", async (user, mediaType) => {
+    try {
+        await client.subscribe(user, mediaType);
+        if (mediaType === "video") {
+            displayRemoteVideo(user);
+        }
+        if (mediaType === "audio") {
+            user.audioTrack.play();
+        }
+    } catch (error) {
+        console.error("Error subscribing to user:", error);
+    }
+});
+
+
+
+
+// Get Initials from Name
+function getInitials(name) {
+    return name
+        .split(" ")
+        .map(word => word[0].toUpperCase())
+        .join("");
+}
+
+
+// Handle When Camera is Turned Off
+client.on("user-unpublished", (user) => {
+    console.log(`Remote user ${user.uid} unpublished video.`);
+    const videoElement = document.getElementById(`remoteVideo-${user.uid}`);
+    const placeholder = document.getElementById(`placeholder-${user.uid}`);
+    
+    if (videoElement) {
+        videoElement.style.display = "none";
+        placeholder.style.display = "flex";
+        console.log(`Showing placeholder for UID: ${user.uid}`);
+    }
+});
+
+// Helper to Get Initials
+function getInitials(name) {
+    return name
+        .split(" ")
+        .map(word => word[0].toUpperCase())
+        .join("");
+}
+
+client.on("user-unpublished", (user) => {
+    console.log(`Remote user ${user.uid} unpublished video.`);
+
+    const videoElement = document.getElementById(`remoteVideo-${user.uid}`);
+    const placeholder = document.getElementById(`placeholder-${user.uid}`);
+
+    if (videoElement && placeholder) {
+        videoElement.style.display = "none";
+        placeholder.style.display = "flex"; // Show initials when the camera is off
+        console.log(`Showing placeholder for UID: ${user.uid}`);
+    }
+});
+
+
+
+
+
+
+
+client.on("user-published", async (user, mediaType) => {
+    try {
+        await client.subscribe(user, mediaType);
+
+        if (mediaType === "video" && user.videoTrack) {
+            const videoElement = document.getElementById(`remoteVideo-${user.uid}`);
+            const placeholder = document.getElementById(`placeholder-${user.uid}`);
+
+            if (videoElement) {
+                videoElement.srcObject = new MediaStream([user.videoTrack.getMediaStreamTrack()]);
+                videoElement.style.display = "block";
+                placeholder.style.display = "none";
+                console.log(`Showing video for UID: ${user.uid}`);
+            }
+        }
+        
+        if (mediaType === "audio" && user.audioTrack) {
+            user.audioTrack.play();
+        }
+    } catch (error) {
+        console.error("Error subscribing to user:", error);
+    }
+});
+
+function removeRemoteVideo(uid) {
+    const container = document.getElementById(`user-container-${uid}`);
+    if (container) {
+        container.remove();
+        console.log(`Removed video container for UID: ${uid}`);
+    } else {
+        console.log(`Container not found for UID: ${uid}`);
+    }
+}
+
+    
+    </script>
+</body>
+</html>
+

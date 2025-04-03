@@ -1,0 +1,145 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<head>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f7fa;
+            color: #333;
+        }
+        .btn-custom {
+            padding: 8px 16px;
+            border-radius: 8px;
+            transition: background-color 0.3s ease;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            border: none;
+            outline: none;
+        }
+        .btn-custom-success {
+            background-color: #28a745;
+            color: white;
+        }
+        .btn-custom-danger {
+            background-color: #dc3545;
+            color: white;
+        }
+        .btn-custom:hover {
+            opacity: 0.9;
+        }
+        .card-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            justify-content: center;
+        }
+        .card {
+            background: linear-gradient(135deg, #6dd5ed 0%, #2193b0 100%);
+            color: white;
+            border-radius: 16px;
+            overflow: hidden;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            width: 320px;
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            position: relative;
+        }
+        .card:nth-child(even) {
+            background: linear-gradient(135deg, #ff9a9e 0%, #fad0c4 100%);
+        }
+        .card:nth-child(odd) {
+            background: linear-gradient(135deg, #a1c4fd 0%, #c2e9fb 100%);
+        }
+        .card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 12px 20px rgba(0, 0, 0, 0.2);
+        }
+        .card-title {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+        }
+        .card-title i {
+            margin-right: 10px;
+            color: #f7c32e;
+        }
+        .card-text {
+            font-size: 14px;
+            margin-bottom: 16px;
+            line-height: 1.5;
+        }
+        .actions {
+            display: flex;
+            justify-content: space-between;
+            gap: 8px;
+        }
+        .btn-custom i {
+            margin-right: 5px;
+        }
+    </style>
+</head>
+
+<div class="container mt-4">
+    <div class="card-container">
+        {% for meeting in meetings %}
+        <div class="card">
+            <h5 class="card-title">
+                <i class="fas fa-video"></i> {{ meeting.meeting_name }}
+            </h5>
+            <p class="card-text">
+                <strong><i class="fas fa-calendar-alt"></i> Date:</strong> {{ meeting.meeting_date }}<br>
+                <strong><i class="fas fa-clock"></i> Time:</strong> {{ meeting.meeting_time }}<br>
+                <strong><i class="fas fa-hourglass-half"></i> Duration:</strong> {{ meeting.meeting_duration }} minutes<br>
+                <strong><i class="fas fa-info-circle"></i> Description:</strong> {{ meeting.meeting_description }}<br>
+                <strong><i class="fas fa-user"></i> Created by:</strong> {{ meeting.created_by }}
+            </p>
+            <div class="actions">
+                <a href="{{ url_for('start_meeting', meeting_id=meeting.meeting_id) }}" class="btn-custom btn-custom-success">
+                    <i class="fas fa-play"></i> Start
+                </a>
+                <button type="button" class="btn-custom btn-custom-danger" onclick="deleteMeeting('{{ meeting.meeting_id }}')">
+    <i class="fas fa-trash-alt"></i> Delete
+</button>
+
+
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+<script>function deleteMeeting(meetingId) {
+    if (confirm("Are you sure you want to delete this meeting?")) {
+        fetch(`/delete_meeting/${meetingId}`, {
+            method: 'DELETE',
+            headers: { 'Content-Type': 'application/json' }
+        })
+        .then(response => {
+            if (response.status === 204) {
+                alert("Meeting deleted successfully!");
+                document.getElementById(`meeting-row-${meetingId}`)?.remove();
+            } else {
+                return response.json().then(data => {
+                    if (response.status === 401) {
+                        alert("Unauthorized: Only admins can delete meetings.");
+                    } else if (response.status === 404) {
+                        alert("Meeting not found.");
+                    } else {
+                        alert("Failed to delete meeting.");
+                    }
+                });
+            }
+        })
+        .catch(error => {
+            console.error("Error deleting meeting:", error);
+            alert("An error occurred while deleting the meeting.");
+        });
+    }
+}
+
+</script>
+{% endblock %}

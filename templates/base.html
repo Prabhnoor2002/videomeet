@@ -1,0 +1,89 @@
+<!-- filepath: c:\Users\Dell\OneDrive\Desktop\videomeet\templates\base.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Video Meet{% endblock %}</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 20px;
+            background-color: #1d4ed8;
+            color: white;
+        }
+        .header a {
+            color: white;
+            text-decoration: none;
+            margin-left: 10px;
+        }
+        .header a:hover {
+            text-decoration: underline;
+        }
+        .header .nav-links {
+            display: flex;
+            align-items: center;
+        }
+        .header .nav-links a {
+            margin-left: 10px;
+        }
+        
+        .header .nav-links a:hover {
+            background-color: #ddd;
+            text-decoration: none;
+        }
+        .content {
+            margin-top: 20px; 
+        }
+    </style>
+</head>
+<body class="bg-gray-100">
+    <div class="header">
+        <div>
+            <a href="{{ url_for('home') }}" class="text-xl font-bold">Video Meet</a>
+        </div>
+        <div class="nav-links">
+            {% if 'user' in session %}
+                <span class="mr-4">Welcome, {{ session['user_name'] }}!</span>
+                    <button class="dropbtn bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
+                        <a href="{{ url_for('logout') }}">Logout</a></button>
+              
+    
+            {% else %}
+                <a href="{{ url_for('login') }}" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">Login</a>
+                <a href="{{ url_for('signup') }}" class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded">Signup</a>
+            {% endif %}
+        </div>
+    </div>
+    <div class="container mx-auto mt-4">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <div class="flashes fixed top-20 right-20 z-50">
+                    {% for category, message in messages %}
+                        <div class="flash p-4 mb-4 rounded-lg text-white flex justify-between items-center {% if category == 'success' %}bg-green-500{% elif category == 'danger' %}bg-red-500{% elif category == 'warning' %}bg-yellow-500{% elif category == 'info' %}bg-blue-500{% endif %}">
+                            <span>{{ message }}</span>
+                            <span class="close ml-4 cursor-pointer" onclick="this.parentElement.style.display='none';">&times;</span>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+    </div>
+    <div class="content">
+        {% block content %}{% endblock %}
+    </div>
+    <script>
+        
+        setTimeout(() => {
+            const flashes = document.querySelectorAll('.flash');
+            flashes.forEach(flash => {
+                flash.style.display = 'none';
+            });
+        }, 2500);
+    </script>
+</body>
+</html>

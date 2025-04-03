@@ -1,0 +1,142 @@
+{% extends "base.html" %}
+
+{% block title %}Login & Signup{% endblock %}
+
+{% block content %}
+<div class="bg-gradient-to-br from-blue-100 to-purple-200 min-h-screen flex items-center justify-center">
+  <div class="bg-white shadow-xl rounded-2xl p-8 max-w-md w-full">
+    <!-- Tabs for Login and Signup -->
+    <div class="flex justify-between mb-6">
+      <button id="loginTab" class="w-1/2 py-2 text-center text-lg font-semibold rounded-l-xl bg-blue-600 text-white">Login</button>
+      <button id="signupTab" class="w-1/2 py-2 text-center text-lg font-semibold rounded-r-xl bg-gray-200">Sign Up</button>
+    </div>
+
+    <!-- Login Form -->
+    <form id="loginForm" class="space-y-4" method="POST" action="/login" onsubmit="return validateLoginForm()">
+      <input type="email" name="email" placeholder="Email" class="w-full p-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-400" required>
+      <input type="password" name="password" placeholder="Password" class="w-full p-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-400" required>
+      <button type="submit" class="w-full bg-blue-600 text-white py-3 rounded-xl hover:bg-blue-700 transition">Login</button>
+      <p class="text-center text-sm mt-2">Forgot password? <a href="/reset_password_request" class="text-blue-600 font-semibold hover:underline">Reset</a></p>
+    </form>
+
+    <!-- Signup Form -->
+    <form id="signupForm" class="space-y-4 hidden" method="POST" action="/signup" onsubmit="return validateSignupForm()">
+      <input type="text" name="username" placeholder="Full Name" class="w-full p-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-400" required>
+      <input type="email" name="email" placeholder="Email" class="w-full p-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-400" required>
+      <input type="password" name="password" placeholder="Password" class="w-full p-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-400" required>
+
+      <!-- Role Selection -->
+      <label for="role" class="block text-gray-700 font-semibold">Select Role:</label>
+      <select name="role" id="role" class="w-full p-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-400" required>
+        <option value="user">User</option>
+        <option value="admin">Admin</option>
+        <option value="trainer">Trainer</option>
+      </select>
+
+      <!-- Admin Secret Key -->
+      <div id="admin-secret" style="display: none;">
+        <label for="admin_secret" class="block text-gray-700 font-semibold">Admin Secret Key:</label>
+        <input type="password" name="admin_secret" id="admin_secret" class="w-full p-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-400">
+      </div>
+      <div id="trainer-secret" style="display: none;">
+        <label for="trainer_secret" class="block text-gray-700 font-semibold">Trainer Secret Key:</label>
+        <input type="password" name="trainer_secret" id="trainer_secret" class="w-full p-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-400">
+      </div>
+
+      <button type="submit" class="w-full bg-purple-600 text-white py-3 rounded-xl hover:bg-purple-700 transition">Sign Up</button>
+    </form>
+  </div>
+</div>
+
+<script>
+  // Toggle between Login and Signup forms
+  const loginTab = document.getElementById('loginTab');
+  const signupTab = document.getElementById('signupTab');
+  const loginForm = document.getElementById('loginForm');
+  const signupForm = document.getElementById('signupForm');
+
+  loginTab.onclick = () => {
+    loginTab.classList.add('bg-blue-600', 'text-white');
+    signupTab.classList.remove('bg-purple-600', 'text-white');
+    signupTab.classList.add('bg-gray-200', 'text-black');
+    loginForm.classList.remove('hidden');
+    signupForm.classList.add('hidden');
+  };
+
+  signupTab.onclick = () => {
+    signupTab.classList.add('bg-purple-600', 'text-white');
+    loginTab.classList.remove('bg-blue-600', 'text-white');
+    loginTab.classList.add('bg-gray-200', 'text-black');
+    signupForm.classList.remove('hidden');
+    loginForm.classList.add('hidden');
+  };
+
+  document.getElementById('role').addEventListener('change', function() {
+  const adminSecretField = document.getElementById('admin-secret');
+  const trainerSecretField = document.getElementById('trainer-secret');
+
+  if (this.value === 'admin') {
+    adminSecretField.style.display = 'block';
+    trainerSecretField.style.display = 'none';
+  } else if (this.value === 'trainer') {
+    trainerSecretField.style.display = 'block';
+    adminSecretField.style.display = 'none';
+  } else {
+    adminSecretField.style.display = 'none';
+    trainerSecretField.style.display = 'none';
+  }
+});
+
+  // Validate Login Form
+  function validateLoginForm() {
+    const email = loginForm.email.value;
+    const password = loginForm.password.value;
+
+    if (!email || !password) {
+      alert('Please fill out all fields.');
+      return false;
+    }
+    return true;
+  }
+
+  // Validate Signup Form
+  function validateSignupForm() {
+  const username = signupForm.username.value;
+  const email = signupForm.email.value;
+  const password = signupForm.password.value;
+  const role = signupForm.role.value;
+  const adminSecret = signupForm.admin_secret.value;
+  const trainerSecret = signupForm.trainer_secret.value;
+
+  // Check if all required fields are filled
+  if (!username || !email || !password) {
+    alert('Please fill out all required fields.');
+    return false;
+  }
+
+  // Validate password (for all roles)
+  const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+  if (!passwordRegex.test(password)) {
+    alert(
+      'Password must be at least 8 characters long, include at least one uppercase letter, one lowercase letter, one number, and one special character.'
+    );
+    return false;
+  }
+
+  // Validate Admin Secret Key (only for admin role)
+  if (role === 'admin' && !adminSecret) {
+    alert('Please provide the Admin Secret Key.');
+    return false;
+  }
+
+  // Validate Trainer Secret Key (only for trainer role)
+  if (role === 'trainer' && !trainerSecret) {
+    alert('Please provide the Trainer Secret Key.');
+    return false;
+  }
+
+  return true;
+}
+
+</script>
+{% endblock %}

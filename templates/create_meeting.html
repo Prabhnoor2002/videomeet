@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+
+{% block title %}Create Meeting{% endblock %}
+
+{% block content %}
+<div class="container mx-auto p-4 bg-white shadow-lg rounded-lg max-w-4xl relative mt-6">
+    <h1 class="text-3xl font-bold mb-6 text-center">Create Meeting</h1>
+    
+    <form action="{{ url_for('create_meeting') }}" method="POST" onsubmit="return validateMeetingForm();">
+        <input id="meeting_name" type="text" name="meeting_name" placeholder="Meeting Name" required class="block w-full p-2 mb-4 border rounded-lg">
+        <input id="meeting_date" type="date" name="meeting_date" required class="block w-full p-2 mb-4 border rounded-lg">
+        <input id="meeting_time" type="time" name="meeting_time" required class="block w-full p-2 mb-4 border rounded-lg">
+        <input id="meeting_duration" type="text" name="meeting_duration" placeholder="Duration (in minutes)" required class="block w-full p-2 mb-4 border rounded-lg">
+        <textarea id="meeting_description" name="meeting_description" placeholder="Meeting Description" class="block w-full p-2 mb-4 border rounded-lg"></textarea>
+        <button type="submit" class="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600">Create Meeting</button>
+    </form>
+</div>
+
+<script>
+    function validateMeetingForm() {
+        const meetingDate = document.getElementById('meeting_date').value;
+        const meetingTime = document.getElementById('meeting_time').value;
+
+        if (!meetingDate || !meetingTime) {
+            alert('Please fill out all fields.');
+            return false;
+        }
+
+        // Combine date and time into a Date object for comparison
+        const selectedDateTime = new Date(`${meetingDate}T${meetingTime}`);
+        const currentDate = new Date();
+
+        // Check if the selected date and time are in the past
+        if (selectedDateTime < currentDate) {
+            alert('The meeting date and time cannot be in the past.');
+            return false;
+        }
+
+        return true;
+    }
+
+    // Set the minimum date to today
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById('meeting_date').setAttribute('min', today);
+</script>
+{% endblock %}

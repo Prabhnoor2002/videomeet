@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+
+{% block content %}
+<!-- Bootstrap & FontAwesome -->
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<!-- Custom CSS -->
+<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+
+<div class="container mt-5">
+
+    <div class="card shadow-lg border-0 p-4" style="background-color: #f8f9fa;">
+        <h2 class="text-center text-primary mb-4">Trainer Dashboard</h2>
+
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h3 class="text-secondary">Your Meetings</h3>
+            <a href="{{ url_for('create_meeting') }}" class="btn btn-primary btn-lg shadow-sm">
+                <i class="fas fa-plus-circle"></i> Create Meeting
+            </a>
+        </div>
+
+        <!-- Meeting Cards -->
+        {% if meetings %}
+        <div class="d-flex flex-column gap-3">
+            {% for meeting in meetings %}
+            <div id="meeting-row-{{ meeting.meeting_id }}" class="card shadow-sm border-0 p-3" 
+                 style="background-color: white; border-left: 5px solid #007bff;">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h4 class="text-primary">{{ meeting.meeting_name }}</h4>
+                        <p class="mb-1 text-muted"><strong>Date:</strong> {{ meeting.meeting_date }}</p>
+                        <p class="mb-1 text-muted"><strong>Time:</strong> {{ meeting.meeting_time }}</p>
+                        <p class="mb-1 text-muted"><strong>Duration:</strong> {{ meeting.meeting_duration }} min</p>
+                        <p class="mb-1 text-muted"><strong>Description:</strong> {{ meeting.meeting_description }}</p>
+                    </div>
+                    
+                    <div class="d-flex flex-column gap-2">
+                        <!-- Start Meeting Button -->
+                        <a href="{{ url_for('start_meeting', meeting_id=meeting.meeting_id) }}" 
+                           class="btn btn-success btn-sm shadow-sm">
+                            <i class="fas fa-play"></i> Start
+                        </a>
+
+                        <!-- Copy Link Button -->
+                        <button class="btn btn-secondary btn-sm shadow-sm" 
+                                onclick="copyMeetingLink('{{ meeting.meeting_id }}')">
+                            <i class="fas fa-copy"></i> Copy Link
+                        </button>
+
+                        <!-- Delete Meeting Button -->
+                        <button class="btn btn-danger btn-sm shadow-sm" 
+                                onclick="deleteMeeting('{{ meeting.meeting_id }}')">
+                            <i class="fas fa-trash"></i> Delete
+                        </button>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="alert alert-info text-center">
+            <i class="fas fa-info-circle"></i> No meetings found. Click "Create Meeting" to add one.
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Custom JavaScript -->
+<script>
+    // Delete Meeting
+    function deleteMeeting(meetingId) {
+        if (confirm("Are you sure you want to delete this meeting?")) {
+            fetch(`/delete_meeting/${meetingId}`, {
+                method: 'DELETE',
+                headers: { 'Content-Type': 'application/json' }
+            })
+            .then(response => {
+                if (response.status === 204) {
+                    alert("Meeting deleted successfully!");
+                    // Remove the row from the DOM
+                    let row = document.getElementById(`meeting-row-${meetingId}`);
+                    if (row) row.remove();
+                } else if (response.status === 401) {
+                    alert("Unauthorized: Only admins can delete meetings.");
+                } else if (response.status === 404) {
+                    alert("Meeting not found.");
+                } else {
+                    alert("Failed to delete meeting.");
+                }
+            })
+            .catch(error => {
+                console.error("Error deleting meeting:", error);
+                alert("An error occurred while deleting the meeting.");
+            });
+        }
+    }
+
+    // Copy Meeting Link
+    function copyMeetingLink(meetingId) {
+        let meetingLink = `${window.location.origin}/start_meeting/${meetingId}`;
+        console.log("Meeting Link:", meetingLink); // ✅ Logging for Debugging
+        navigator.clipboard.writeText(meetingLink)
+            .then(() => {
+                alert("Meeting link copied to clipboard!");
+            })
+            .catch(err => {
+                console.error("Failed to copy:", err);
+                alert("Error copying link.");
+            });
+    }
+</script>
+
+<!-- Bootstrap JS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+{% endblock %}
