@@ -187,14 +187,12 @@ def delete_meeting(meeting_id):
 
     conn, cursor = get_db_cursor()
     try:
-        # If the user is a trainer, ensure they can only delete their own meetings
         if user_role == 'trainer':
             cursor.execute("SELECT * FROM meetings WHERE meeting_id = ? AND email = ?", (meeting_id, user_email))
             meeting = cursor.fetchone()
             if not meeting:
                 return jsonify({'error': 'Unauthorized: Trainers can only delete their own meetings.'}), 401
 
-        # Admins can delete any meeting
         cursor.execute("DELETE FROM meetings WHERE meeting_id = ?", (meeting_id,))
         conn.commit()
         if cursor.rowcount == 0:

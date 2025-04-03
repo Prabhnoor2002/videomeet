@@ -787,6 +787,164 @@ function removeRemoteVideo(uid) {
 
     
     </script>
+    <script>
+    function addButtonEventListener(buttonId, callback) {
+        const button = document.getElementById(buttonId);
+        if (button) {
+            button.addEventListener('click', callback);
+            button.addEventListener('touchstart', (event) => {
+                event.preventDefault(); // Prevent duplicate events
+                callback(event);
+            });
+        } else {
+            console.warn(`Button with ID '${buttonId}' not found.`);
+        }
+    }
+addButtonEventListener('startCall', async () => {
+        try {
+            // Initialize Agora client
+            client = AgoraRTC.createClient({ mode: "rtc", codec: "vp8" });
+            await client.join(appId, channel, token || null);
+
+            // Create and publish local tracks
+            localVideoTrack = await AgoraRTC.createCameraVideoTrack();
+            localAudioTrack = await AgoraRTC.createMicrophoneAudioTrack();
+
+            displayLocalVideo(localVideoTrack);
+            await client.publish([localVideoTrack, localAudioTrack]);
+
+            console.log("Call started successfully!");
+            setupRemoteUserListeners();
+
+            // Disable the "Start Call" button
+            document.getElementById("startCall").disabled = true;
+
+            // Enable all other buttons
+            document.getElementById("endCall").disabled = false;
+            document.getElementById("toggleCamera").disabled = false;
+            document.getElementById("toggleMic").disabled = false;
+            document.getElementById("shareScreen").disabled = false;
+        } catch (error) {
+            console.error("Error starting call:", error);
+        }
+    });
+   addButtonEventListener('endCall', async () => {
+        try {
+            // Stop and close the tracks
+            if (localAudioTrack) {
+                localAudioTrack.stop();
+                localAudioTrack.close();
+                localAudioTrack = null;
+            }
+            if (localVideoTrack) {
+                localVideoTrack.stop();
+                localVideoTrack.close();
+                localVideoTrack = null;
+            }
+
+            // Leave the Agora channel
+            if (client) {
+                await client.leave();
+                client = null;
+                document.getElementById("videoGrid").innerHTML = '<video id="localVideo" autoplay playsinline></video>';
+                console.log("Left channel and cleared video.");
+            }
+
+            // Update UI
+            document.getElementById("startCall").disabled = false;
+            document.getElementById("endCall").disabled = true;
+            document.getElementById("toggleCamera").disabled = true;
+            document.getElementById("toggleMic").disabled = true;
+            document.getElementById("shareScreen").disabled = true;
+        } catch (error) {
+            console.error("Error ending call:", error);
+        }
+    });
+addButtonEventListener('toggleCamera', async () => {
+        try {
+            if (!localVideoTrack) {
+                // Recreate the video track if it doesn't exist
+                localVideoTrack = await AgoraRTC.createCameraVideoTrack();
+                console.log("New video track created.");
+            }
+
+            const isEnabled = localVideoTrack.enabled;
+
+            if (isEnabled) {
+                // Disable the camera without unpublishing
+                await localVideoTrack.setEnabled(false);
+                document.getElementById("localVideo").style.display = "none";
+                document.getElementById("placeholder").style.display = "flex";
+                console.log("Camera turned off. Placeholder shown.");
+            } else {
+                // Enable the camera
+                await localVideoTrack.setEnabled(true);
+                document.getElementById("localVideo").style.display = "block";
+                document.getElementById("placeholder").style.display = "none";
+                console.log("Camera turned on. Video shown.");
+            }
+
+            // Update the button icon
+            document.getElementById("toggleCamera").innerHTML = isEnabled
+                ? '<i class="fas fa-video-slash"></i>'
+                : '<i class="fas fa-video"></i>';
+        } catch (error) {
+            console.error("Error toggling camera:", error);
+        }
+    });
+
+    addButtonEventListener('toggleMic', async () => {
+        try {
+            if (localAudioTrack) {
+                const isEnabled = localAudioTrack.enabled;
+                await localAudioTrack.setEnabled(!isEnabled);
+                document.getElementById("toggleMic").innerHTML = isEnabled
+                    ? '<i class="fas fa-microphone-slash"></i>'
+                    : '<i class="fas fa-microphone"></i>';
+                console.log(isEnabled ? "Microphone muted." : "Microphone unmuted.");
+            } else {
+                console.warn("No audio track available.");
+            }
+        } catch (error) {
+            console.error("Error toggling mic:", error);
+        }
+    });
+addButtonEventListener('shareScreen', async () => {
+        if (!screenTrack) {
+            try {
+                // Start screen sharing
+                screenTrack = await AgoraRTC.createScreenVideoTrack();
+
+                // Replace the local video track with the screen track
+                await client.unpublish(localVideoTrack);
+                await client.publish(screenTrack);
+
+                // Update the UI to show "Stop Sharing"
+                document.getElementById("shareScreen").innerHTML = '<i class="fas fa-stop"></i>';
+                console.log("Screen sharing started.");
+            } catch (error) {
+                console.error("Error starting screen sharing:", error);
+            }
+        } else {
+            try {
+                // Stop screen sharing
+                await client.unpublish(screenTrack);
+                screenTrack.close();
+                screenTrack = null;
+
+                // Re-publish the local video track
+                await client.publish(localVideoTrack);
+
+                // Update the UI to show "Share Screen"
+                document.getElementById("shareScreen").innerHTML = '<i class="fas fa-desktop"></i> Share Screen';
+                console.log("Screen sharing stopped.");
+            } catch (error) {
+                console.error("Error stopping screen sharing:", error);
+            }
+        }
+    });
+    addButtonEventListener('startRecording', startScreenRecording);
+    addButtonEventListener('stopRecording', stopScreenRecording);</script>
 </body>
 </html>
 
