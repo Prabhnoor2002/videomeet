@@ -439,6 +439,11 @@ function appendChatMessage(message, side) {
         const uid = Math.floor(Math.random() * 10000);
         let screenTrack = null;
 document.getElementById("shareScreen").addEventListener("click", async () => {
+    if (!navigator.mediaDevices.getDisplayMedia) {
+        alert("Screen sharing is not supported on this device or browser.");
+        return;
+    }
+
     if (!screenTrack) {
         try {
             // Start screen sharing
@@ -453,6 +458,7 @@ document.getElementById("shareScreen").addEventListener("click", async () => {
             console.log("Screen sharing started.");
         } catch (error) {
             console.error("Error starting screen sharing:", error);
+            alert("Failed to start screen sharing. Please check permissions.");
         }
     } else {
         try {
@@ -471,8 +477,7 @@ document.getElementById("shareScreen").addEventListener("click", async () => {
             console.error("Error stopping screen sharing:", error);
         }
     }
-});       
-
+});
 document.getElementById("startCall").addEventListener("click", async () => {
     try {
         // Initialize Agora client
