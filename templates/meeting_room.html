@@ -214,6 +214,7 @@ document.getElementById('localName').innerText = username;
 const room = meeting_id; // Assuming meeting_id is available in the scope
 
 socket.emit('join', { room: room, username: username, role: 'user' });
+socket.emit('join_room', { room: room, username: username });
 
 socket.on('participant_joined', (data) => {
     updateParticipantsList(data.participants);
@@ -389,22 +390,19 @@ function setupRemoteUserListeners() {
   // Sending message with username (optional if you have usernames)
   sendBtn.addEventListener('click', () => {
   const message = chatInput.value.trim();
-  if (message) {
-    socket.emit('chat_message', { msg: message, sender: username, room: room }); // Include room
-    appendChatMessage(`You: ${message}`, 'right');
+  if (message && room) {
+    socket.emit('chat_message', { msg: message, sender: username, room: room });
     chatInput.value = '';
   }
 });
 
 
+
 // Receive and display messages
 socket.on('chat_message', (data) => {
-  if (data.sender !== username) {
-    appendChatMessage(`${data.sender}: ${data.msg}`, 'left');
-  } else {
-    appendChatMessage(`You: ${data.msg}`, 'right');
-  }
+  appendChatMessage(`${data.sender}: ${data.msg}`, data.sender === username ? 'right' : 'left');
 });
+
 
 
 // Toggle chat box visibility

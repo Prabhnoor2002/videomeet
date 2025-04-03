@@ -257,12 +257,20 @@ def meeting_room(meeting_id):
     return render_template('meeting_room.html', meeting_id=meeting_id, username=username)
 @socketio.on('chat_message')
 def handle_chat(data):
-    print(f"Received message: {data}")
-    room = data.get('room')  # Ensure room info is passed
+    room = data.get('room')
     if room:
+        print(f"Broadcasting message to room {room}: {data}")
         emit('chat_message', data, room=room)  # Broadcast to the correct room
     else:
-        print("Error: Room not provided in chat_message event")
+        print("Error: No room specified. Message not broadcasted.")
+
+@socketio.on('join_room')
+def handle_join(data):
+    room = data.get('room')
+    username = data.get('username', 'Anonymous')
+    if room:
+        join_room(room)
+        print(f"{username} joined room: {room}")
 
 
 participants = {}  # Store participants for each room
