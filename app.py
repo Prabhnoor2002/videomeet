@@ -16,7 +16,9 @@ load_dotenv()
 
 app = Flask(__name__)
 app.secret_key = secrets.token_hex(16)
-socketio = SocketIO(app, cors_allowed_origins="*", async_mode="threading")
+socketio = SocketIO(app, cors_allowed_origins="*", async_mode="eventlet")
+
+
 
 ADMIN_SECRET_KEY = os.getenv('ADMIN_SECRET_KEY')
 TRAINER_SECRET_KEY = os.getenv('TRAINER_SECRET_KEY')
